@@ -12,7 +12,7 @@ bucket_name = os.environ.get("BUCKET_NAME")
 aws_access_key = os.environ.get("AWS_ACCESS_KEY")
 aws_secret_access_key = os.environ.get("AWS_SECRET_ACCESS_KEY")
 
-endpoint = "http://localhost:5000"
+endpoint = "http://ec2-51-20-31-105.eu-north-1.compute.amazonaws.com:5000" # change this as needed
 
 s3_client = boto3.client(
     's3',
@@ -21,6 +21,8 @@ s3_client = boto3.client(
     aws_secret_access_key=aws_secret_access_key,
     endpoint_url='https://s3.eu-north-1.amazonaws.com'
 )
+
+frequency = 2 * 60 * 60  # 2h
 
 
 if __name__ == '__main__':
@@ -32,12 +34,19 @@ if __name__ == '__main__':
 
         print(f'Started training session with id={train_session_id}, waiting 2min for checkpoints.')
 
-        time.sleep(20)
+        time.sleep(10)
 
         objects = s3_client.list_objects(Bucket=bucket_name)
         checkpoints = list(filter(lambda obj: obj['Key'].startswith(f'clients_checkpoints/{subfolder}') and obj['Key'].endswith('.ckpt'), objects['Contents']))
         checkpoint_names = list(map(lambda c: c['Key'].split('/')[-1], checkpoints))
 
+        # Skip training session if no checkpoints are found
+        if not checkpoint_names:
+            print('No checkpoints found. Skipping this training session.')
+            time.sleep(frequency)
+            continue
+
+        # Continue with FedAvg process
         print(f'Found {len(checkpoint_names)} checkpoints in this training session. Starting FedAvg process.')
 
         # Download checkpoints from S3 bucket...
@@ -94,4 +103,4 @@ if __name__ == '__main__':
         print(f'Finished training session with id={train_session_id}.')
         print('Waiting 2h until next training session...')
 
-        time.sleep(2 * 60 * 60)
+        time.sleep(frequency)

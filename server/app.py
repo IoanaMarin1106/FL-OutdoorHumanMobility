@@ -1,11 +1,9 @@
-from botocore.config import Config
 from flask import Flask, request
-from flask_socketio import SocketIO, emit
+from flask_socketio import SocketIO
 from dotenv import load_dotenv
 from flask_cors import CORS
 import os
 import datetime
-import requests
 import logging
 import boto3
 from botocore.exceptions import ClientError
