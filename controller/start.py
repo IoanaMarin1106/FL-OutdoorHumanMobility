@@ -12,7 +12,9 @@ bucket_name = os.environ.get("BUCKET_NAME")
 aws_access_key = os.environ.get("AWS_ACCESS_KEY")
 aws_secret_access_key = os.environ.get("AWS_SECRET_ACCESS_KEY")
 
-endpoint = "http://ec2-51-20-31-105.eu-north-1.compute.amazonaws.com:5000" # change this as needed
+endpoint = f'http://{os.environ.get("FL_SERVER_ENDPOINT")}:{os.environ.get("FL_SERVER_PORT")}'
+frequency_hours = int(os.getenv("FREQUENCY_HOURS", '24'))
+frequency_seconds = frequency_hours * 3600
 
 s3_client = boto3.client(
     's3',
@@ -21,9 +23,6 @@ s3_client = boto3.client(
     aws_secret_access_key=aws_secret_access_key,
     endpoint_url='https://s3.eu-north-1.amazonaws.com'
 )
-
-frequency = 2 * 60 * 60  # 2h
-
 
 if __name__ == '__main__':
     while True:
@@ -43,7 +42,8 @@ if __name__ == '__main__':
         # Skip training session if no checkpoints are found
         if not checkpoint_names:
             print('No checkpoints found. Skipping this training session.')
-            time.sleep(frequency)
+            print(f'Waiting {frequency_hours}h until next training session...')
+            time.sleep(frequency_seconds)
             continue
 
         # Continue with FedAvg process
@@ -101,6 +101,6 @@ if __name__ == '__main__':
         requests.get(f'{endpoint}/send_checkpoint/{train_session_id}')
 
         print(f'Finished training session with id={train_session_id}.')
-        print('Waiting 2h until next training session...')
+        print(f'Waiting {frequency_hours}h until next training session...')
 
-        time.sleep(frequency)
+        time.sleep(frequency_seconds)

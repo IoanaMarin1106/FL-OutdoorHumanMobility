@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, request, jsonify
 from flask_socketio import SocketIO
 from dotenv import load_dotenv
 from flask_cors import CORS
@@ -52,6 +52,9 @@ def get_checkpoint_upload_url(subfolder):
     socketio.emit('upload_checkpoint', response, to=sid)
 
 
+@app.route('/health', methods=['GET'])
+def health_check():
+    return jsonify(status='healthy'), 200
 
 @app.route('/ping')
 @metrics.gauge('in_progress', 'Ping requests in progress')
